@@ -110,16 +110,33 @@ class MarbleSolitaireController {
   // take in model m and view v
   constructor(m, v) {
     v.renderBoard(m.getBoard(), m.getScore());
-    // board starts out completely filled; first click selects empty slot, and game begins.
-    // to start out, may be easier to hardcode a starting empty slot, get the game play right, then deal with this.
     v.setMessage("Click to select starting empty slot");
     v.addCellClickListener(function(row, col) {
-      console.log(row, col);
-      /******* YOUR CODE HERE *******/
-      // fill in controller logic here. this is your "action listener" for clicks on the board.
-      
+      if (m.getEmptyScore() == 0) {
+        m.setEmptyPeg(row, col);
+        v.setMessage("Game in progress");
+      } else {
+        if (this.fR < 0 && this.fC < 0) {
+          this.fR = row;
+          this.fC = col;
+          v.highlightCell(row, col, "orange");
+        } else {
+          try {
+            m.move(this.fR, this.fC, row, col);
+          } catch (err) {
+            alert(err);
+          }
+
+          v.highlightCell(this.fR, this.fC, "white");
+          this.fR = this.fC = -1;
+        }
+      }
+
+      if (m.isGameOver()) v.setMessage("Game Over!");
+      v.renderBoard(m.getBoard(), m.getScore());
     }.bind(this));
-    // ^^^ ensure that in the body of the function "this" refers to the controller object, not the inner function context
+    
+    this.fR = this.fC = -1;
   }
 }
 
@@ -131,7 +148,6 @@ class MarbleSolitaireModel {
     this.armLength = armLength;
     this.boardSide = armLength * 3 - 2;
     var outline = this.boardSide - this.armLength;
-    var middle = (this.boardSide - 1) / 2;
 
     this.board = [];
 
@@ -142,9 +158,8 @@ class MarbleSolitaireModel {
         if ((i < this.armLength - 1 && j < this.armLength - 1)
         || (i < armLength - 1 && j > outline)
         || (i > outline && j < this.armLength - 1)
-        || (i > outline && j > outline)
-        || (i == middle && j == middle)) {
-          boardLine[j] = Slot.EMPTY;
+        || (i > outline && j > outline)) {
+          boardLine[j] = Slot.INVALID
         } else {
           boardLine[j] = Slot.PEG; 
         }
@@ -168,6 +183,61 @@ class MarbleSolitaireModel {
     }
 
     return score;
+  }
+  getEmptyScore() {
+    var total = 0;
+    for (var i = 0; i < this.boardSide; i++) {
+      for (var j = 0; j < this.boardSide; j++) {
+        if (this.board[i][j] != Slot.INVALID) total++;
+      }
+    }
+
+    return total - this.getScore();
+  }
+  canMove(fR, fC, tR, tC) {
+    if (fR >= this.boardSide || fC >= this.boardSide || tR >= this.boardSide || tC >= this.boardSide) return false;
+    if (fR < 0 || fC < 0 || tR < 0 || tC < 0) return false;
+    if (fR == tR && Math.abs(fC - tC) != 2) return false;
+    if (fC == tC && Math.abs(fR - tR) != 2) return false;
+
+    var from = this.board[fR][fC];
+    var to = this.board [tR][tC];
+    if (from == Slot.INVALID || to == Slot.INVALID || middle == Slot.INVALID) return false;
+    if (from == Slot.EMPTY) return false;
+    if (to == Slot.PEG) return false;
+
+    try {
+      var middle = this.board [(fR + tR) / 2][(fC + tC) / 2];
+    } catch {
+      return false;
+    }
+    if (middle == Slot.EMPTY) return false;
+
+    return true;
+  }
+  move(fR, fC, tR, tC) {
+    if (!this.canMove(fR, fC, tR, tC)) throw "Invalid Move";
+
+    this.board[fR][fC] = Slot.EMPTY;
+    this.board[tR][tC] = Slot.PEG;
+    this.board[(fR + tR) / 2][(fC + tC) / 2] = Slot.EMPTY;
+  }
+  isGameOver() {
+    for (var i = 0; i < this.boardSide; i++) {
+      for (var j = 0; j < this.boardSide; j++) {
+        if (this.board[i][j] != Slot.PEG) continue;
+        if (this.canMove(i, j, i, j + 2)) return false;
+        if (this.canMove(i, j, i + 2, j)) return false;
+        if (this.canMove(i, j, i, j - 2)) return false;
+        if (this.canMove(i, j, i - 2, j)) return false;
+      }
+    }
+
+    return true;
+  }
+  setEmptyPeg(row, col) {
+    if (row >= this.boardSide || col >= this.boardSide) throw "Invalid from-to position";
+    this.board[row][col] = Slot.EMPTY;
   }
 }
 
