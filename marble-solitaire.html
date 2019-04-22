@@ -1,0 +1,153 @@
+<html>
+<head>
+<script src="https://code.jquery.com/jquery-3.4.0.min.js"
+integrity="sha256-BJeo0qm959uMBGb65z40ejJYGSgR7REI4+CW1fNKwOg=" crossorigin="anonymous">
+</script><style media="screen" type="text/css">
+td {
+  width:40px;
+  height:40px;
+}
+.circle {
+  display: block;
+  width: 30px;
+  height: 30px;
+  margin: 0 auto;
+  border-radius: 50%;
+}
+.num-input {
+  width: 30px;
+  border-radius: 20%;
+}
+</style>
+<title>Marble Solitaire</title>
+</head>
+<body style="font-family: Helvetica, sans-serif">
+<!--
+<select id="game-type">
+<option>English</option>
+<option>European</option>
+<option>Triangle</option>
+</select>
+-->
+Arm thickness: <input id="arm" type="text" class="num-input">
+<!-- Starting empty row: <input id="sRow" type="text" class="num-input">, column: <input id="sCol" type="text" class="num-input"> -->
+<button id="new-game" style="border-radius:5px">New Game</button>
+<table id="board" border="0"></table>
+<div style="display:none" id="score-disp">Score: <span id="score"></span></div>
+<div id="msg"></div>
+<script>
+var slotTpl = '<div class="circle" style="%%%"/>'; // html snippet for PEG/EMPTY
+// an "enum" representing slot values. PEG and EMPTY have styles.
+var Slot = {
+  PEG: 1,
+  EMPTY: 2,
+  INVALID: 3,
+  prop: {
+    1: {style: "background-color:#4b5bb3;box-shadow: inset -5px -5px 5px rgba(0,0,0,.5);"},
+    2: {style: "background-color:white;box-shadow: inset 4px 4px 5px rgba(0,0,0,.5);"}
+  }
+};
+
+class MarbleSolitaireView {
+  // set up the html table and score display
+  constructor(dim) {
+    if(dim <= 0) throw "Board side dimension must be positive";
+    this.boardSide = dim;
+    var tmpHtml = '';
+    for(var r = 0; r < dim; r++) {
+      tmpHtml += '<tr id="'+r+'">';
+      for(var c = 0; c < dim; c++) {
+        tmpHtml += '<td id="'+r+'-'+c+'"></td>';
+      }
+      tmpHtml += '</tr>';
+    }
+    $('#board').html(tmpHtml);
+    $('#score-disp').show();
+  }
+  // take a 2d array board, display it in the table; display given score
+  renderBoard(board, score) {
+    if(board.length != this.boardSide) {
+      throw "Invalid board dimension: " + board.length;
+    }
+    for(var r = 0; r < board.length; r++) {
+      if(board[r].length != this.boardSide) {
+        throw "Invalid board dimension: " + board[r].length;
+      }
+      for(var c = 0; c < board[r].length; c++) {
+        if(board[r][c] === Slot.PEG || board[r][c] === Slot.EMPTY) {
+          $('#'+r+'-'+c).html(slotTpl.replace(/%%%/, Slot.prop[board[r][c]].style));
+        }
+      }
+    }
+    $('#score').html(score);
+  }
+  // display a message below the board
+  setMessage(msg) {
+    $('#msg').html(msg);
+  }
+  // "highlight" a cell: change its background color to the given color.
+  // cells are 0-indexed from upper left to lower right
+  highlightCell(r, c, color) {
+    if(r < 0 || r >= this.boardSide || c < 0 || c >= this.boardSide) {
+      throw "Invalid cell position: " + r + "," + c;
+    }
+    $('#'+r+'-'+c).css('background-color', color);
+  }
+  // add a function to be executed when a cell is clicked. Function func must take
+  // two arguments, row and col (0-based indices, upper left to lower right)
+  addCellClickListener(func) {
+    $('td').click(function(evt) {
+      var cell = $(evt.target).attr('id') || $(evt.target).parent('td').attr('id');
+      var [row, col] = cell.split('-');
+      func(+row, +col);
+    });
+  }
+}
+
+/*** Don't modify code above this line. Fill in your code BELOW this line. *****/
+
+class MarbleSolitaireController {
+  // take in model m and view v
+  constructor(m, v) {
+    v.renderBoard(m.getBoard(), "");
+    // board starts out completely filled; first click selects empty slot, and game begins.
+    // to start out, may be easier to hardcode a starting empty slot, get the game play right, then deal with this.
+    v.setMessage("Click to select starting empty slot");
+    v.addCellClickListener(function(row, col) {
+      console.log(row, col);
+      /******* YOUR CODE HERE *******/
+      // fill in controller logic here. this is your "action listener" for clicks on the board.
+      
+    }.bind(this));
+    // ^^^ ensure that in the body of the function "this" refers to the controller object, not the inner function context
+  }
+}
+
+// English style /**** YOUR CODE HERE *****/
+class MarbleSolitaireModel {
+  constructor(armLength) {
+    // fill in model constructor here
+  }
+  getBoardSide() {
+    // return board width (e.g. 7 for arm thickness 3)
+  }
+  getBoard() {
+    // return a 2d array of Slot representing current game state
+  }
+  // fill in the rest of the model here: move(), isGameOver(), etc
+}
+
+var model, view, ctrl;
+
+$('#new-game').click(function(evt) {
+  try {
+    model = new MarbleSolitaireModel($('#arm').val());
+    view = new MarbleSolitaireView(model.getBoardSide());
+    ctrl = new MarbleSolitaireController(model, view);
+  } catch(err) {
+    alert(err);
+  }
+});
+</script>
+</body>
+</html>
