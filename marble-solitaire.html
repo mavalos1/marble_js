@@ -109,7 +109,7 @@ class MarbleSolitaireView {
 class MarbleSolitaireController {
   // take in model m and view v
   constructor(m, v) {
-    v.renderBoard(m.getBoard(), "");
+    v.renderBoard(m.getBoard(), m.getScore());
     // board starts out completely filled; first click selects empty slot, and game begins.
     // to start out, may be easier to hardcode a starting empty slot, get the game play right, then deal with this.
     v.setMessage("Click to select starting empty slot");
@@ -126,15 +126,49 @@ class MarbleSolitaireController {
 // English style /**** YOUR CODE HERE *****/
 class MarbleSolitaireModel {
   constructor(armLength) {
-    // fill in model constructor here
+    if (armLength % 2 != 1) throw "Arm length must be odd";
+
+    this.armLength = armLength;
+    this.boardSide = armLength * 3 - 2;
+    var outline = this.boardSide - this.armLength;
+    var middle = (this.boardSide - 1) / 2;
+
+    this.board = [];
+
+    for (var i = 0; i < this.boardSide; i++) {
+      var boardLine = [];
+
+      for (var j = 0; j < this.boardSide; j++) {
+        if ((i < this.armLength - 1 && j < this.armLength - 1)
+        || (i < armLength - 1 && j > outline)
+        || (i > outline && j < this.armLength - 1)
+        || (i > outline && j > outline)
+        || (i == middle && j == middle)) {
+          boardLine[j] = Slot.EMPTY;
+        } else {
+          boardLine[j] = Slot.PEG; 
+        }
+      }
+
+      this.board.push(boardLine);
+    }
   }
   getBoardSide() {
-    // return board width (e.g. 7 for arm thickness 3)
+    return this.boardSide;
   }
   getBoard() {
-    // return a 2d array of Slot representing current game state
+    return this.board;
   }
-  // fill in the rest of the model here: move(), isGameOver(), etc
+  getScore() {
+    var score = 0;
+    for (var i = 0; i < this.boardSide; i++) {
+      for (var j = 0; j < this.boardSide; j++) {
+        if (this.board[i][j] == Slot.PEG) score++;
+      }
+    }
+
+    return score;
+  }
 }
 
 var model, view, ctrl;
