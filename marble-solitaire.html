@@ -113,25 +113,30 @@ class MarbleSolitaireController {
     v.setMessage("Click to select starting empty slot");
     v.addCellClickListener(function(row, col) {
       if (m.getEmptyScore() == 0) {
+        //Set an empty slot if board is full
         m.setEmptyPeg(row, col);
         v.setMessage("Game in progress");
       } else {
         if (this.fR < 0 && this.fC < 0) {
+          //Store the from position & highlight
           this.fR = row;
           this.fC = col;
           v.highlightCell(row, col, "orange");
         } else {
+          //If from position is stored, attempt a move
           try {
             m.move(this.fR, this.fC, row, col);
           } catch (err) {
             alert(err);
           }
 
+          //Clear the saved position
           v.highlightCell(this.fR, this.fC, "white");
           this.fR = this.fC = -1;
         }
       }
 
+      //Check if game is over
       if (m.isGameOver()) v.setMessage("Game Over!");
       v.renderBoard(m.getBoard(), m.getScore());
     }.bind(this));
@@ -151,6 +156,7 @@ class MarbleSolitaireModel {
 
     this.board = [];
 
+    //Initialize the board with no empty slot
     for (var i = 0; i < this.boardSide; i++) {
       var boardLine = [];
 
@@ -175,6 +181,7 @@ class MarbleSolitaireModel {
     return this.board;
   }
   getScore() {
+    //Count all the filled slots on the board
     var score = 0;
     for (var i = 0; i < this.boardSide; i++) {
       for (var j = 0; j < this.boardSide; j++) {
@@ -185,33 +192,39 @@ class MarbleSolitaireModel {
     return score;
   }
   getEmptyScore() {
-    var total = 0;
+    //Count all the empty slots on the board
+    var empty = 0;
     for (var i = 0; i < this.boardSide; i++) {
       for (var j = 0; j < this.boardSide; j++) {
-        if (this.board[i][j] != Slot.INVALID) total++;
+        if (this.board[i][j] == Slot.EMPTY) empty++;
       }
     }
 
-    return total - this.getScore();
+    return empty;
   }
   canMove(fR, fC, tR, tC) {
+    //false if either position is out of bound
     if (fR >= this.boardSide || fC >= this.boardSide || tR >= this.boardSide || tC >= this.boardSide) return false;
     if (fR < 0 || fC < 0 || tR < 0 || tC < 0) return false;
+
+    //false if either position is unorthogonal
     if (fR == tR && Math.abs(fC - tC) != 2) return false;
     if (fC == tC && Math.abs(fR - tR) != 2) return false;
 
     var from = this.board[fR][fC];
     var to = this.board [tR][tC];
-    if (from == Slot.INVALID || to == Slot.INVALID || middle == Slot.INVALID) return false;
-    if (from == Slot.EMPTY) return false;
-    if (to == Slot.PEG) return false;
 
+    //false if from is not filled or to is not empty
+    if (from != Slot.PEG) return false;
+    if (to != Slot.EMPTY) return false;
+
+    //false if there's no filled slot in-between
     try {
       var middle = this.board [(fR + tR) / 2][(fC + tC) / 2];
     } catch {
       return false;
     }
-    if (middle == Slot.EMPTY) return false;
+    if (middle != Slot.PEG) return false;
 
     return true;
   }
